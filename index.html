@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaSnap - Free Reel Downloader</title>
+    <link rel="manifest" href="manifest.json">  <!-- PWA: Links to manifest -->
+    <meta name="theme-color" content="#833ab4">  <!-- PWA: Theme color -->
+    <style>
+        :root { --primary: #833ab4; --secondary: #fd1d1d; --dark: #222; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 2.5rem; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        
+        h1 { color: var(--primary); margin-bottom: 0; font-size: 2.5rem; letter-spacing: -1px; }
+        .author { color: #777; font-size: 0.9rem; margin-top: 5px; margin-bottom: 2rem; font-style: italic; }
+        
+        .input-group { position: relative; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 12px 45px 12px 12px; border: 2px solid #eee; border-radius: 10px; outline: none; box-sizing: border-box; transition: 0.3s; }
+        input:focus { border-color: var(--primary); }
+        
+        .paste-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--primary); font-weight: bold; }
+        
+        button.main-btn { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; }
+        
+        #result { margin-top: 1.5rem; display: none; padding: 15px; background: #f9f9f9; border-radius: 10px; border: 1px dashed #ccc; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>InstaSnap</h1>
+    <div class="author">Created by Harsh Harne</div>
+    
+    <div class="input-group">
+        <input type="text" id="reelUrl" placeholder="Paste Reel Link Here...">
+        <button class="paste-btn" onclick="pasteLink()">Paste</button>
+    </div>
+    
+    <button class="main-btn" onclick="fetchVideo()">Download Reel</button>
+    
+    <div class="loader" id="loader"></div>
+    
+    <div id="result">
+        <p style="margin-top:0; color:#444;">✨ Video is ready!</p>
+        <a id="downloadBtn" href="#" target="_blank">
+            <button style="background: #28a745; border:none; color:white; padding:10px 20px; border-radius:5px; cursor:pointer; width:100%;">Save to Device</button>
+        </a>
+    </div>
+</div>
+
+<script>
+// Function to handle the Paste button
+async function pasteLink() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('reelUrl').value = text;
+    } catch (err) {
+        alert("Please allow clipboard permissions or paste manually.");
+    }
+}
+
+async function fetchVideo() {
+    const urlInput = document.getElementById('reelUrl').value;
+    const loader = document.getElementById('loader');
+    const resultDiv = document.getElementById('result');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    if (!urlInput) return alert("Please paste a Reel URL first!");
+
+    loader.style.display = "block";
+    resultDiv.style.display = "none";
+
+    const options = {
+        method: 'GET',
+        headers: {
+            'X-RapidAPI-Key': 'ef42b81e52mshd09add36e28b469p1da860jsnaebadca9f437',
+            'X-RapidAPI-Host': 'instagram-reels-downloader-api.p.rapidapi.com'
+        }
+    };
+
+    try {
+        const response = await fetch(`https://instagram-reels-downloader-api.p.rapidapi.com/download?url=${encodeURIComponent(urlInput)}`, options);
+        const data = await response.json();
+        
+        // Fixed parsing: Extract the video URL from the medias array in the response
+        const finalUrl = data.data && data.data.medias && data.data.medias[0] && data.data.medias[0].url;
+
+        if (finalUrl) {
+            downloadBtn.href = finalUrl;
+            resultDiv.style.display = "block";
+        } else {
+            alert("Could not fetch video. Ensure the account is public and the URL is a valid Reel.");
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Connection error. Check your API Key.");
+    } finally {
+        loader.style.display = "none";
+    }
+}
+
+// PWA: Register service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.log('Service Worker registration failed', err));
+}
+</script>
+
+</body>
+</html>
