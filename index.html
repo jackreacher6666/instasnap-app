@@ -107,6 +107,29 @@ if ('serviceWorker' in navigator) {
         .then(() => console.log('Service Worker registered'))
         .catch(err => console.log('Service Worker registration failed', err));
 }
+
+// PWA: Manual install trigger - Adds a floating "Install App" button if supported
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    // Create and show a custom install button
+    const installBtn = document.createElement('button');
+    installBtn.textContent = 'Install App';
+    installBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #833ab4; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); z-index: 1000;';
+    installBtn.onclick = () => {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted the install');
+            }
+            deferredPrompt = null;
+            installBtn.remove();  // Hide button after install attempt
+        });
+    };
+    document.body.appendChild(installBtn);
+});
 </script>
 
 </body>
